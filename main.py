@@ -48,7 +48,18 @@ async def get_all_latest_prices():
     """
     Get the latest high and low prices for all items that we have data for.
     """
-    return tracker.get_latest_prices()
+    latest_prices = tracker.get_latest_prices()
+    response_data = []
+    for item_id_str, price_data in latest_prices.items():
+        item_info = tracker.item_mapping.get(item_id_str, {})
+        response_data.append(
+            {
+                "id": int(item_id_str),
+                "name": item_info.get("name", "Unknown"),
+                **price_data,
+            }
+        )
+    return response_data
 
 
 @app.get("/latest/{item_identifier}", summary="Get latest price for a specific item")
@@ -68,11 +79,10 @@ async def get_latest_price(
         )
 
     item_info = tracker.item_mapping.get(str(item_id), {})
-    item_name = item_info.get("name", "Unknown")
+    item_info.pop("icon", None)
 
     return {
-        "item_id": item_id,
-        "item_name": item_name,
+        **item_info,
         "price_data": price_data[str(item_id)],
     }
 
@@ -96,10 +106,9 @@ async def get_timeseries_data(
     try:
         timeseries_data = tracker.get_timeseries(item_id, timestep)
         item_info = tracker.item_mapping.get(str(item_id), {})
-        item_name = item_info.get("name", "Unknown")
+        item_info.pop("icon", None)
         return {
-            "item_id": item_id,
-            "item_name": item_name,
+            **item_info,
             "timestep": timestep,
             "timeseries": timeseries_data,
         }
