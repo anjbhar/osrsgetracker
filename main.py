@@ -1,15 +1,25 @@
 from typing import Union
-
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Path, Query
 
 from ge_tracker import OSRSGETracker
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global tracker
+    async with OSRSGETracker() as tracker_instance:
+        tracker = tracker_instance
+        yield
+
 
 app = FastAPI(
     title="OSRS GE Tracker API",
     description="An API to track Old School RuneScape Grand Exchange prices.",
     version="1.0.0",
+    lifespan=lifespan,
 )
-tracker = OSRSGETracker()
+tracker: OSRSGETracker
 
 
 def resolve_item_identifier(item_identifier: Union[int, str]) -> int:
@@ -48,7 +58,7 @@ async def get_all_latest_prices():
     """
     Get the latest high and low prices for all items that we have data for.
     """
-    latest_prices = tracker.get_latest_prices()
+    latest_prices = await tracker.get_latest_prices()
     response_data = []
     for item_id_str, price_data in latest_prices.items():
         item_info = tracker.item_mapping.get(item_id_str, {})
@@ -71,7 +81,7 @@ async def get_latest_price(
     You can provide either the item's name (e.g., "Abyssal whip") or its ID (e.g., 4151).
     """
     item_id = resolve_item_identifier(item_identifier)
-    price_data = tracker.get_latest_prices(item_id=item_id)
+    price_data = await tracker.get_latest_prices(item_id=item_id)
 
     if not price_data or str(item_id) not in price_data:
         raise HTTPException(
@@ -104,7 +114,7 @@ async def get_timeseries_data(
     """
     item_id = resolve_item_identifier(item_identifier)
     try:
-        timeseries_data = tracker.get_timeseries(item_id, timestep)
+        timeseries_data = await tracker.get_timeseries(item_id, timestep)
         item_info = tracker.item_mapping.get(str(item_id), {})
         item_info.pop("icon", None)
         return {
