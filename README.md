@@ -7,7 +7,7 @@ This is an API to track item prices on the Old School RuneScape Grand Exchange u
 - Get the latest high and low prices for any item.
 - Get the latest prices for all available items.
 - Get time-series data for an item (5m, 1h, 6h, 24h intervals).
-- Uses a local `mapping.json` for item ID lookups.
+- Uses the RuneScape Wiki mapping endpoint for item ID lookups and refreshes on an interval.
 - Endpoints accept either item name or item ID.
 
 ## Setup
@@ -22,7 +22,10 @@ This is an API to track item prices on the Old School RuneScape Grand Exchange u
     ```bash
     pip install -r requirements.txt
     ```
-4.  **Item Mapping**: Ensure you have the `mapping.json` file in the same directory as the scripts. This file should contain a mapping of OSRS items.
+
+## Mapping Refresh Interval
+
+The mapping is refreshed every 3600 seconds by default. You can change this by passing a different `mapping_refresh_interval` when creating `OSRSGETracker` in `main.py`.
 
 ## Running the API
 
